@@ -57,7 +57,6 @@ describe('app routes', () => {
       .post('/api/v1/auth/login')
       .send({ email: 'nottess@tess.com', password: 'realpassword' })
       .then(res => {
-        expect(res.header['set-cookie'][0]).toEqual(expect.stringContaining('session='));
         expect(res.body).toEqual({
           message: 'invalid email or password', 
           status: 401
@@ -70,7 +69,6 @@ describe('app routes', () => {
     return request(app)
       .post('/api/v1/auth/login')
       .send({ email: 'tess@tess.com', password: 'fakepassword' })
-      expect(res.header['set-cookie'][0]).toEqual(expect.stringContaining('session='));
       .then(res => {
         expect(res.body).toEqual({
           message: 'invalid email or password', 
@@ -79,4 +77,26 @@ describe('app routes', () => {
       });
   });
 
+  it('can verify if a user is already logged in', async() => {
+    const user = await User.create({
+      email: 'tess@tess.com',
+      password: 'realpassword'
+    });
+    //need to use agent method of supertest because by default cookies are deleted at the end of every supertest implementation and we're interested in using the persistant nature of cookies for this test
+    const agent = request.agent(app);
+
+    await agent
+      .post('/api/v1/auth/login')
+      .send({ email: 'tess@tess.com', password: 'realpassword' });
+
+    return agent 
+      .get('/api/v1/auth/verify')
+      .then(res => {
+        expect(res.body).toEqual({
+          _id: user.id,
+          email: 'tess@tess.com',
+          __v: 0
+        });
+      });
+  });
 });
