@@ -1,1 +1,1 @@
-# full-stack-app-lab
+# authentification-lab
